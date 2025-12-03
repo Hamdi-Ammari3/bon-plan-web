@@ -22,7 +22,7 @@ export async function GET(request) {
       status: 200,
       headers: {
         'Content-Type': contentType,
-        'Cache-Control': 'public, max-age=31536000, immutable',
+        'Cache-Control': 'no-store',
         'Access-Control-Allow-Origin': '*',
       },
     });
