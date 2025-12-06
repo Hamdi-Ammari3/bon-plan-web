@@ -1,7 +1,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useState } from "react";
 import { auth } from "@/firebaseConfig";
-import {loginWithGoogle,saveLikedPost,removeLikedPost,isPostLiked} from "@/firebaseAuth";
+import {loginWithGoogle,saveLikedPost,removeLikedPost,isPostLiked} from "../firebaseAuth";
 import { IoCall } from "react-icons/io5";
 import { FaLocationArrow } from "react-icons/fa";
 import { IoClose } from "react-icons/io5";
@@ -38,10 +38,9 @@ export const OfferBottomSheet = ({ offer, isOpen, onClose }) => {
   const handleLike = async () => {
     let user = auth.currentUser;
 
-    // If not logged in → login first
     if (!user) {
-      const userId = await loginWithGoogle();
-      user = auth.currentUser; // refresh
+      await loginWithGoogle();
+      user = auth.currentUser;
     }
 
     const userEmail = user.email;

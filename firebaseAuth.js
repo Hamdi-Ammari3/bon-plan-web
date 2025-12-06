@@ -30,6 +30,7 @@ async function createUserIfNotExists(userId, user) {
       email: user.email,
       liked_posts: [],
       created_at: new Date(),
+      can_test_the_app:false
     });
   }
 }

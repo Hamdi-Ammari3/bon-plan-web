@@ -10,6 +10,7 @@ import { createMarkerIcon } from "../lib/createMarkerIcon";
 import { DB, auth } from "@/firebaseConfig";
 import { collection, getDocs, getDoc, doc, query, where } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
+import { loginWithGoogle } from "@/firebaseAuth";
 import { HiRefresh } from "react-icons/hi";
 import { FaLocationArrow, FaBookmark } from "react-icons/fa";
 
@@ -26,6 +27,7 @@ const mapOptions = {
 };
 
 export default function HomeMap() {
+  const [loading, setLoading] = useState(true);
   const [offers, setOffers] = useState([]);
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState("الكل");
@@ -34,44 +36,91 @@ export default function HomeMap() {
   const [mapLoadedOnce, setMapLoadedOnce] = useState(false);
   const [selectedOffer, setSelectedOffer] = useState(null);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [savedMode, setSavedMode] = useState(false);
+  const [canTestApp, setCanTestApp] = useState(false);
+  const [showDownloadBanner, setShowDownloadBanner] = useState(true);
+  const [isDownloadModalOpen, setIsDownloadModalOpen] = useState(false);
 
-  // GOOGLE MAP REFS
+
   const mapRef = useRef(null);
   const clustererRef = useRef(null);
-
-  // MARKER POOL
-  const markersRef = useRef({}); // store markers by id: { id: marker }
+  const markersRef = useRef({});
 
   // AUTH LISTENER
   useEffect(() => {
     return onAuthStateChanged(auth, (u) => setUser(u || null));
   }, []);
 
+  //MANUAL LOGIN  
+  const handleManualLogin = async () => {
+    try {
+      await loginWithGoogle();
+    } catch (err) {
+      console.log("Login failed:", err);
+    }
+  }
+
+  //CHECK IF USER ELIGIBLE TO DOWNLOAD THE APP  
+  useEffect(() => {
+    const fetchUserFlags = async () => {
+      if (!user) {
+        setCanTestApp(false);
+        return;
+      }
+
+      const userRef = doc(DB, "users", user.email.toLowerCase());
+      const snap = await getDoc(userRef);
+
+      if (snap.exists()) {
+        setCanTestApp(snap.data().can_test_the_app === true);
+      }
+    };
+
+    fetchUserFlags();
+  }, [user]);
+
   // INITIAL DATA LOAD
   useEffect(() => {
     (async () => {
-      const now = Date.now();
-      const postsRef = collection(DB, "posts");
+      try {
+        setLoading(true);        
 
-      const qActive = query(
-        postsRef,
-        where("isActive", "==", true),
-        where("canceled", "==", false)
-      );
+        const now = Date.now();
+        const postsRef = collection(DB, "posts");
 
-      const [postsSnap, catSnap] = await Promise.all([
-        getDocs(qActive),
-        getDoc(doc(DB, "categories", "6mTU8aEAcAxdIdhsXA9L")),
-      ]);
+        const qActive = query(
+          postsRef,
+          where("isActive", "==", true),
+          where("canceled", "==", false)
+        );
 
-      const activeOffers = postsSnap.docs
-        .map((d) => ({ id: d.id, ...d.data() }))
-        .filter((o) => o.end_date?.toMillis() >= now);
+        const [postsSnap, catSnap] = await Promise.all([
+          getDocs(qActive),
+          getDoc(doc(DB, "categories", "6mTU8aEAcAxdIdhsXA9L")),
+        ]);
 
-      setOffers(activeOffers);
+        let activeOffers = postsSnap.docs
+          .map((d) => ({ id: d.id, ...d.data() }))
+          .filter((o) => o.end_date?.toMillis() >= now);
 
-      if (catSnap.exists()) {
-        setCategories(catSnap.data().categories_array || []);
+        //PRELOAD ALL MARKER ICONS BEFORE MAP RENDERS
+        activeOffers = await Promise.all(
+          activeOffers.map(async (offer) => ({
+            ...offer,
+            markerIcon: await createMarkerIcon(offer.thumbnail, offer.prod_name),
+          }))
+        );
+
+        setOffers(activeOffers);
+
+        if (catSnap.exists()) {
+          setCategories(catSnap.data().categories_array || []);
+        }
+      } 
+      catch (err) {
+        console.log("Error loading offers", err);
+      } finally {
+        setLoading(false);
       }
     })();
   }, []);
@@ -84,22 +133,6 @@ export default function HomeMap() {
   }, [offers, selectedCategory]);
 
   // MAP LOAD
-  const onMapLoadd = async (map) => {
-    mapRef.current = map;
-    setMapLoadedOnce(true);
-    map.setOptions({ gestureHandling: "greedy" });
-
-    // Load Marker library (new API)
-    try {
-      const { Marker } = await google.maps.importLibrary("marker");
-      window.Marker = Marker;
-    } catch (e) {
-      window.Marker = google.maps.Marker; // fallback
-    }
-
-    initMarkersOnce();
-  };
-
   const onMapLoad = async (map) => {
     mapRef.current = map;
     setMapLoadedOnce(true);
@@ -127,7 +160,6 @@ export default function HomeMap() {
           map.setZoom(12);
         },
         () => {
-          // ❌ User denied or failed => fallback to Tunisia center
           map.panTo(tunisiaCenter);
           map.setZoom(7);
         }
@@ -158,9 +190,8 @@ export default function HomeMap() {
   const initMarkersOnce = async () => {
     if (!mapRef.current) return;
 
-    for (const offer of offers) {
-      createMarker(offer);
-    }
+    // wait for ALL markers to be created
+    await Promise.all(offers.map(o => createMarker(o)));
 
     updateVisibleMarkers();
     updateClusterer();
@@ -171,15 +202,17 @@ export default function HomeMap() {
     if (!mapRef.current) return;
     if (markersRef.current[offer.id]) return;
 
-    const icon = await createMarkerIcon(offer.thumbnail, offer.prod_name);
+    //const icon = await createMarkerIcon(offer.thumbnail, offer.prod_name);
 
     const marker = new google.maps.Marker({
       position: {
         lat: offer.location.latitude,
         lng: offer.location.longitude,
       },
-      map: null,
-      icon,
+      //map: null,
+      //icon,
+      icon: offer.markerIcon,
+      map: mapRef.current,
     });
 
     marker.addListener("click", () => {
@@ -265,10 +298,12 @@ export default function HomeMap() {
   useEffect(() => {
     if (!mapRef.current || offers.length === 0) return;
 
-    Promise.all(offers.map(o => createMarker(o))).then(() => {
+    (async () => {
+      await Promise.all(offers.map(o => createMarker(o)));
       updateVisibleMarkers();
       updateClusterer();
-    });
+      setLoading(false);
+    })();
 
   }, [offers, mapRef.current]);
 
@@ -297,6 +332,7 @@ export default function HomeMap() {
       .filter((o) => o.end_date?.toMillis() >= now);
 
     setOffers(newOffers);
+    setSavedMode(false);
 
     // Add any missing markers
     await Promise.all(newOffers.map((o) => createMarker(o)));
@@ -311,15 +347,16 @@ export default function HomeMap() {
   // Re-center map
   const handleRecenter = () => {
     if (!mapRef.current) return;
+    setSavedMode(false);
 
-    // User location already known
+    // If location already known, center immediately
     if (userLocation) {
       mapRef.current.panTo(userLocation);
       mapRef.current.setZoom(13);
       return;
     }
 
-    // Otherwise request again
+    // Request permission from user
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
@@ -328,16 +365,56 @@ export default function HomeMap() {
             lng: pos.coords.longitude,
           };
           setUserLocation(coords);
-
           mapRef.current.panTo(coords);
           mapRef.current.setZoom(13);
         },
-        () => {
-          alert("تعذّر تحديد موقعك.");
+
+        (err) => {
+          if (err.code === 1) {
+            alert(
+              "للاستفادة من ميزة تحديد موقعك، يرجى تفعيل الإذن من الإعدادات:\n\n" +
+              "الإعدادات > الخصوصية > خدمات الموقع > Safari\n" +
+              "وقم بتحديد 'السماح أثناء الاستخدام'."
+            );
+          } else {
+            alert("تعذّر تحديد موقعك.");
+          }
         }
       );
     }
-  };
+  }
+
+  // FETCH SAVED POSTS
+  const handleShowSavedPosts = async () => {
+    if (!user) return alert("الرجاء تسجيل الدخول");
+
+    const userRef = doc(DB, "users", user.email.toLowerCase());
+    const snap = await getDoc(userRef);
+
+    const liked = snap.data()?.liked_posts || [];
+    if (liked.length === 0) return alert("لا توجد عروض محفوظة");
+
+    const savedOffers = offers.filter((o) => liked.includes(o.id));
+
+    setSavedMode(true);
+    setSelectedCategory("الكل");
+    setOffers(savedOffers);
+
+    updateVisibleMarkers();
+    updateClusterer();
+
+    // Center map around saved posts
+    if (savedOffers.length === 1) {
+      const post = savedOffers[0];
+      mapRef.current.panTo({
+        lat: post.location.latitude,
+        lng: post.location.longitude,
+      });
+      mapRef.current.setZoom(14);
+    } else {
+      fitAllOffers(savedOffers);
+    }
+  }
 
   //Center to tunisiaCenter is user denies his loaction grant
   useEffect(() => {
@@ -350,30 +427,62 @@ export default function HomeMap() {
     }
   }, [mapLoadedOnce, offers]);
 
-
-  // SHOW SAVED POSTS (FAST)
-  const handleShowSavedPosts = async () => {
-    if (!user) return alert("الرجاء تسجيل الدخول");
-
-    const userRef = doc(DB, "users", user.email.toLowerCase());
-    const snap = await getDoc(userRef);
-
-    const liked = snap.data()?.liked_posts || [];
-    if (liked.length === 0) return alert("لا توجد عروض محفوظة");
-
-    const savedOffers = offers.filter((o) => liked.includes(o.id));
-
-    setSelectedCategory("الكل");
-    setOffers(savedOffers);
-
-    updateVisibleMarkers();
-    updateClusterer();
-  };
-
   return (
     <div className="page-container">
 
-       {user && <div className="welcome-bar">مرحباً، {user.displayName} 👋</div>}
+      <div className="welcome-bar">
+        {user ? (
+          <p className="welcome-bar-text">مرحباً، {user.displayName} 👋</p>
+        ) : (
+          <p className="welcome-bar-text login" onClick={handleManualLogin}>
+           تسجيل الدخول
+          </p>
+        )}
+      </div>
+
+      {user && canTestApp && showDownloadBanner && (
+        <div className="download-banner">
+          <p onClick={() => setIsDownloadModalOpen(true)}>نسخة التطبيق متوفرة الان</p>
+          <button className="close-banner-btn" onClick={() => setShowDownloadBanner(false)}>×</button>
+        </div>
+      )}
+
+      {isDownloadModalOpen && (
+        <div className="download-modal-backdrop" onClick={() => setIsDownloadModalOpen(false)}>
+          <div className="download-modal" onClick={(e) => e.stopPropagation()}>
+            <h3>روابط تحميل التطبيق</h3>
+
+            <a
+              className="download-link"
+              href="https://play.google.com/apps/testing/com.hamdi.waffer"
+              target="_blank"
+            >
+             تحميل للأندرويد
+            </a>
+
+            <a
+              className="download-link disabled"
+              //href="https://testflight.apple.com/join/YOUR_TESTFLIGHT_LINK"
+              //target="_blank"
+            >
+             تحميل للآيفون
+            </a>
+
+            <button className="close-modal-btn" onClick={() => setIsDownloadModalOpen(false)}>
+             إغلاق
+            </button>
+          </div>
+        </div>
+      )}
+
+      {loading && (
+        <div className="loading-overlay">
+          <div className="loading-box">
+            <div className="spinner"></div>
+            <p>جاري تحميل العروض...</p>
+          </div>
+        </div>
+      )}
 
       <LoadScript googleMapsApiKey={googleMapsKey}>
         <GoogleMap
@@ -403,12 +512,15 @@ export default function HomeMap() {
           <FaLocationArrow />
         </motion.button>
 
-        <motion.button className="map-control-btn" onClick={handleRefresh}>
-          <HiRefresh />
+        <motion.button className="map-control-btn refresh" onClick={handleRefresh}>
+          <HiRefresh/>
         </motion.button>
 
         {user && (
-          <motion.button className="map-control-btn saved" onClick={handleShowSavedPosts}>
+          <motion.button 
+            className={`map-control-btn saved ${savedMode ? "active" : ""}`}
+            onClick={handleShowSavedPosts}
+          >
             <FaBookmark />
           </motion.button>
         )}
