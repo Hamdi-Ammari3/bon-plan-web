@@ -446,7 +446,7 @@ export default function HomeMap() {
   return (
     <div className="page-container">
 
-      {!forceExternalBrowser && (
+      {forceExternalBrowser && (
         <div className="fb-overlay">
           <div className="fb-modal">
             <h2>للمواصلة يجب فتح الموقع في متصفح خارجي</h2>
