@@ -59,22 +59,7 @@ export default function HomeMap() {
 
   //Open the website in external browser
   const handleOpenExternal = () => {
-    const url = "https://bon-plan-web.netlify.app/";
-    const isAndroid = /android/i.test(navigator.userAgent);
-
-    if (isAndroid) {
-      // Open Chrome explicitly
-      const chromeURL = "googlechrome://" + url.replace("https://", "");
-      window.location.href = chromeURL;
-
-      // fallback if Chrome not installed
-      setTimeout(() => {
-        window.location.href = url;
-      }, 500);
-    } else {
-      // iOS will open Safari automatically
-      window.location.href = url;
-    }
+    window.location.href = "/external-launcher";
   };
 
   // AUTH LISTENER
@@ -461,18 +446,15 @@ export default function HomeMap() {
   return (
     <div className="page-container">
 
-      {forceExternalBrowser && (
+      {!forceExternalBrowser && (
         <div className="fb-overlay">
           <div className="fb-modal">
             <h2>للمواصلة يجب فتح الموقع في متصفح خارجي</h2>
 
             <button className="fb-modal-btn" onClick={handleOpenExternal}>
-             افتح في Chrome / Safari
+            افتح في المتصفح (Chrome / Safari)
             </button>
 
-            <p className="fb-modal-note">
-             إذا وصلت للصفحة هذي من إعلان في فايسبوك أو إنستغرام، افتح الموقع في المتصفح باش الخدمة تكمل بنجاح.
-            </p>
           </div>
         </div>
       )}

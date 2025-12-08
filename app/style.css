@@ -62,7 +62,7 @@ html, body {
 .fb-modal {
   background: #fff;
   padding: 28px 24px;
-  max-width: 360px;
+  max-width: 300px;
   border-radius: 14px;
   text-align: center;
   box-shadow: 0 8px 35px rgba(0,0,0,0.2);
@@ -73,7 +73,7 @@ html, body {
   font-weight: 600;
   color: #222;
   line-height: 1.6;
-  margin-bottom: 18px;
+  margin-bottom: 25px;
 }
 
 .fb-modal-btn {
