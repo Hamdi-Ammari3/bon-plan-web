@@ -41,7 +41,6 @@ export default function HomeMap() {
   const [showDownloadBanner, setShowDownloadBanner] = useState(true);
   const [isDownloadModalOpen, setIsDownloadModalOpen] = useState(false);
 
-
   const mapRef = useRef(null);
   const clustererRef = useRef(null);
   const markersRef = useRef({});
@@ -443,7 +442,7 @@ export default function HomeMap() {
       {user && canTestApp && showDownloadBanner && (
         <div className="download-banner">
           <p onClick={() => setIsDownloadModalOpen(true)}>نسخة التطبيق متوفرة الان</p>
-          <button className="close-banner-btn" onClick={() => setShowDownloadBanner(false)}>×</button>
+          <div className="close-banner-btn" onClick={() => setShowDownloadBanner(false)}>×</div>
         </div>
       )}
 
