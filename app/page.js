@@ -28,6 +28,7 @@ const mapOptions = {
 
 export default function HomeMap() {
   const [loading, setLoading] = useState(true);
+  const [forceExternalBrowser, setForceExternalBrowser] = useState(false);
   const [offers, setOffers] = useState([]);
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState("الكل");
@@ -44,6 +45,37 @@ export default function HomeMap() {
   const mapRef = useRef(null);
   const clustererRef = useRef(null);
   const markersRef = useRef({});
+
+  //Detect user coming from Facebook link
+  useEffect(() => {
+    const ua = navigator.userAgent || navigator.vendor || window.opera;
+    const isFB = ua.includes("FBAN") || ua.includes("FBAV");
+    const isIG = ua.includes("Instagram");
+
+    if (isFB || isIG) {
+      setForceExternalBrowser(true);
+    }
+  }, []);
+
+  //Open the website in external browser
+  const handleOpenExternal = () => {
+    const url = "https://bon-plan-web.netlify.app/";
+    const isAndroid = /android/i.test(navigator.userAgent);
+
+    if (isAndroid) {
+      // Open Chrome explicitly
+      const chromeURL = "googlechrome://" + url.replace("https://", "");
+      window.location.href = chromeURL;
+
+      // fallback if Chrome not installed
+      setTimeout(() => {
+        window.location.href = url;
+      }, 500);
+    } else {
+      // iOS will open Safari automatically
+      window.location.href = url;
+    }
+  };
 
   // AUTH LISTENER
   useEffect(() => {
@@ -428,6 +460,22 @@ export default function HomeMap() {
 
   return (
     <div className="page-container">
+
+      {forceExternalBrowser && (
+        <div className="fb-overlay">
+          <div className="fb-modal">
+            <h2>للمواصلة يجب فتح الموقع في متصفح خارجي</h2>
+
+            <button className="fb-modal-btn" onClick={handleOpenExternal}>
+             افتح في Chrome / Safari
+            </button>
+
+            <p className="fb-modal-note">
+             إذا وصلت للصفحة هذي من إعلان في فايسبوك أو إنستغرام، افتح الموقع في المتصفح باش الخدمة تكمل بنجاح.
+            </p>
+          </div>
+        </div>
+      )}
 
       <div className="welcome-bar">
         {user ? (

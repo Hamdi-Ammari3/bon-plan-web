@@ -48,6 +48,59 @@ html, body {
   touch-action: none; /* Prevents browser pull-to-refresh and scroll */
 }
 
+.fb-overlay {
+  position: fixed;
+  inset: 0;
+  backdrop-filter: blur(6px);
+  background: rgba(0,0,0,0.55);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 99999;
+}
+
+.fb-modal {
+  background: #fff;
+  padding: 28px 24px;
+  max-width: 360px;
+  border-radius: 14px;
+  text-align: center;
+  box-shadow: 0 8px 35px rgba(0,0,0,0.2);
+}
+
+.fb-modal h2 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #222;
+  line-height: 1.6;
+  margin-bottom: 18px;
+}
+
+.fb-modal-btn {
+  background: #d37b01; /* your brand orange */
+  color: #fff;
+  border: none;
+  width: 100%;
+  padding: 14px 20px;
+  border-radius: 10px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.fb-modal-btn:hover {
+  opacity: 0.9;
+}
+
+.fb-modal-note {
+  margin-top: 14px;
+  font-size: 0.85rem;
+  color: #777;
+  line-height: 1.4;
+}
+
+
 /* ✅ UPDATED: Google Map container with proper positioning */
 .map-fullscreen {
   width: 100%;
