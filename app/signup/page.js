@@ -24,6 +24,11 @@ export default function Signup() {
       return;
     }
 
+    if(name.length > 10) {
+      alert("تنبيه", "يجب أن لا يتجاوز الإسم 10 أحرف.");
+      return;
+    }
+
     if (!isValidEmail(email)) {
       alert("الرجاء إدخال بريد إلكتروني صحيح.");
       return;
