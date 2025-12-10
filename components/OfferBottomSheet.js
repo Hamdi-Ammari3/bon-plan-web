@@ -198,14 +198,14 @@ export const OfferBottomSheet = ({ offer, isOpen, onClose, user }) => {
                   {/* PRICE OR DISCOUNT */}
                   {offer.discount_type === "price" ? (
                     <div className="sheet-price-box">
-                      <span className="sheet-price-old">{offer.old_price} د.ت</span>
-                      <span>/</span>
-                      <span className="sheet-price-new">{offer.new_price} د.ت</span>
+                      <p className="sheet-price-old">{offer.old_price} د.ت</p>
+                      <p>/</p>
+                      <p className="sheet-price-new">{offer.new_price} د.ت</p>
                     </div>
                   ) : (
-                    <div className="sheet-discount-box">
-                      <span className="sheet-discount">{offer.percentage}%</span>
-                      <span className="sheet-discount-label">تخفيض</span>
+                    <div className="sheet-price-box">
+                      <p className="sheet-discount">{offer.percentage}%</p>
+                      <p className="sheet-discount-label">تخفيض</p>
                     </div>
                   )}
 
