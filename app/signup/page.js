@@ -25,7 +25,7 @@ export default function Signup() {
     }
 
     if(name.length > 10) {
-      alert("تنبيه", "يجب أن لا يتجاوز الإسم 10 أحرف.");
+      alert("يجب أن لا يتجاوز الإسم 10 أحرف.");
       return;
     }
 
