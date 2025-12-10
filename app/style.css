@@ -34,6 +34,172 @@ html, body {
   cursor: pointer;
 }
 
+/* ---------------------- LOGIN LAYOUT ---------------------- */
+.login-container {
+  direction: rtl;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #ffffff;
+  padding: 0px 20px;
+}
+
+/* ---- Card ---- */
+.login-card {
+  width: 100%;
+  max-width: 420px;
+  background: #fff;
+  padding: 28px;
+  border-radius: 18px;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+  text-align: center;
+  position: relative;
+}
+
+.back-btn{
+  position:absolute;
+  top: 10px;
+  left: 10px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #d37b01;
+  padding: 8px;
+  border-radius: 50%;
+  border: none;
+}
+
+.login-title {
+  font-size: 22px;
+  font-weight: bold;
+  color: #d37b01;
+  margin-bottom: 25px;
+}
+
+/* ---- Labels ---- */
+.login-label {
+  text-align: right;
+  display: block;
+  font-size: 14px;
+  color: #333;
+  margin-bottom: 6px;
+}
+
+/* ---- Inputs ---- */
+.login-input {
+  width: 100%;
+  height: 48px;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  padding: 0 12px;
+  background: #fafafa;
+  font-size: 14px;
+  margin-bottom: 15px;
+}
+
+/* ---- Password Field ---- */
+.password-wrapper {
+  width: 100%;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  padding: 0 12px;
+  background: #fafafa;
+  margin-bottom: 15px;
+}
+
+.password-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-size: 14px;
+}
+
+.password-icon {
+  font-size: 20px;
+  cursor: pointer;
+  color: #777;
+}
+
+/* ---- Login Button ---- */
+.login-btn {
+  width: 100%;
+  height: 48px;
+  background: #d37b01;
+  border: none;
+  border-radius: 10px;
+  color: #fff;
+  font-size: 16px;
+  font-weight: bold;
+  margin-top: 8px;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.login-btn.disabled {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.login-btn:hover {
+  background: #b86c00;
+}
+
+/* ---- Register Link ---- */
+.register-link {
+  margin-top: 15px;
+  background: none;
+  border: none;
+  color: #d37b01;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+/* ---- Responsive Adjustments ---- */
+@media (max-width: 480px) {
+  .login-container {
+    align-items: flex-start;
+    padding: 0px 0px;
+    overflow: hidden;
+  }
+  .login-card {
+    width: 85%;
+    padding: 20px;
+    margin-top: 50px;
+  }
+  .login-title {
+    font-size: 20px;
+  }
+  .login-label {
+    margin-right: 12px;
+  }
+  .login-input {
+    width: 90%;
+  }
+
+  /* ---- Password Field ---- */
+  .password-wrapper {
+    width: 90%;
+  }
+
+  .password-icon {
+    font-size: 20px;
+    cursor: pointer;
+    color: #777;
+  }
+
+  /* ---- Login Button ---- */
+  .login-btn {
+    width: 90%;
+  }
+}
+
+
 /* ---------------------- PAGE.JS LAYOUT ---------------------- */
 
 /* ✅ UPDATED: Full screen container with touch handling */
@@ -47,59 +213,6 @@ html, body {
   overflow: hidden;
   touch-action: none; /* Prevents browser pull-to-refresh and scroll */
 }
-
-.fb-overlay {
-  position: fixed;
-  inset: 0;
-  backdrop-filter: blur(6px);
-  background: rgba(0,0,0,0.55);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 99999;
-}
-
-.fb-modal {
-  background: #fff;
-  padding: 28px 24px;
-  max-width: 300px;
-  border-radius: 14px;
-  text-align: center;
-  box-shadow: 0 8px 35px rgba(0,0,0,0.2);
-}
-
-.fb-modal h2 {
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: #222;
-  line-height: 1.6;
-  margin-bottom: 25px;
-}
-
-.fb-modal-btn {
-  background: #d37b01; /* your brand orange */
-  color: #fff;
-  border: none;
-  width: 100%;
-  padding: 14px 20px;
-  border-radius: 10px;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: 0.2s;
-}
-
-.fb-modal-btn:hover {
-  opacity: 0.9;
-}
-
-.fb-modal-note {
-  margin-top: 14px;
-  font-size: 0.85rem;
-  color: #777;
-  line-height: 1.4;
-}
-
 
 /* ✅ UPDATED: Google Map container with proper positioning */
 .map-fullscreen {
@@ -182,7 +295,7 @@ html, body {
 
 /* Hover effect */
 .map-control-btn:hover {
-  background: #f0f0f0;
+  background: #fff;
 }
 
 /* Lucide icons inside buttons */
@@ -198,13 +311,23 @@ html, body {
   height: 28px;
 }
 
-/* saved posts icon */
 .map-control-btn.saved.active {
-  background: #000 !important;
+  background: #000;
+}
+.map-control-btn.saved.active svg {
+  color: #fff;
+}
+.spinner.small {
+  width: 16px;
+  height: 16px;
+  border: 2px solid #fff;
+  border-bottom-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
 }
 
-.map-control-btn.saved.active svg {
-  color: white !important;
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
 
@@ -241,10 +364,10 @@ html, body {
 
 /* Spinner */
 .spinner {
-  width: 40px;
-  height: 40px;
+  width: 35px;
+  height: 35px;
   border: 4px solid #ccc;
-  border-top-color: #955BFE;
+  border-top-color: #000;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -418,10 +541,12 @@ html, body {
 }
 
 .category-btn {
+  min-width: 100px;
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 5px 20px;
+  justify-content: center;
+  gap: 10px;
+  padding: 5px 15px;
   border-radius: 10px;
   white-space: nowrap;
   border: none;
@@ -551,7 +676,7 @@ html, body {
 
 /* Buttons */
 .sheet-btn {
-  width: 100px;
+  width: 80px;
   height: 37px;
   display: flex;
   align-items: center;
@@ -563,11 +688,7 @@ html, body {
   border: none;
   font-size: 16px;
   font-weight: 500;
-}
-
-.sheet-btn.call {
-  background: #ffffff;
-  border: 1px solid #cfcfcf;
+  position: relative;
 }
 
 .sheet-btn.direction {
@@ -575,26 +696,49 @@ html, body {
   color: white;
 }
 
-.sheet-btn.like {
-  background: #ececec;
-  position: relative;
+.sheet-btn.save {
+  background-color: #ddd;
+  color: #000;
+
 }
 
-/* Like Icon */
-.heart-filled {
-  fill: #FD1D1D;
-  color: #FD1D1D;
+.sheet-btn.save.saved {
+  background-color: #d37b01;
+  color: white;
 }
 
-/* Heart animation */
 .sheet-like-animation {
   position: absolute;
-  inset: 0;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  color: #FD1D1D;
+  top: 5px;
+  right: 20px;
+  color: #d37b01;
+  pointer-events: none;
 }
+
+.sheet-full-loader {
+  height: 72vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.spinner-big {
+  width: 35px;
+  height: 35px;
+  border: 4px solid #000;
+  border-bottom-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  margin-bottom: 10px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 
 /* Product Name */
 .sheet-prod-name {

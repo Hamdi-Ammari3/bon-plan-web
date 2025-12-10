@@ -7,10 +7,9 @@ import { motion } from "framer-motion";
 import { CategoryFilter } from "../components/CategoryFilter";
 import { OfferBottomSheet } from "../components/OfferBottomSheet";
 import { createMarkerIcon } from "../lib/createMarkerIcon";
-import { DB, auth } from "@/firebaseConfig";
+import { DB } from "@/firebaseConfig";
 import { collection, getDocs, getDoc, doc, query, where } from "firebase/firestore";
-import { onAuthStateChanged } from "firebase/auth";
-import { loginWithGoogle } from "@/firebaseAuth";
+import { useRouter } from "next/navigation";
 import { HiRefresh } from "react-icons/hi";
 import { FaLocationArrow, FaBookmark } from "react-icons/fa";
 
@@ -27,8 +26,9 @@ const mapOptions = {
 };
 
 export default function HomeMap() {
+  const router = useRouter();
+
   const [loading, setLoading] = useState(true);
-  const [forceExternalBrowser, setForceExternalBrowser] = useState(false);
   const [offers, setOffers] = useState([]);
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState("الكل");
@@ -46,35 +46,18 @@ export default function HomeMap() {
   const clustererRef = useRef(null);
   const markersRef = useRef({});
 
-  //Detect user coming from Facebook link
+  // load session from localStorage on mount
   useEffect(() => {
-    const ua = navigator.userAgent || navigator.vendor || window.opera;
-    const isFB = ua.includes("FBAN") || ua.includes("FBAV");
-    const isIG = ua.includes("Instagram");
+    const savedUser = localStorage.getItem("userEmail");
+    const savedName = localStorage.getItem("userName");
 
-    if (isFB || isIG) {
-      setForceExternalBrowser(true);
+    if (savedUser) {
+      setUser({
+        email: savedUser,
+        name: savedName,
+      });
     }
   }, []);
-
-  //Open the website in external browser
-  const handleOpenExternal = () => {
-    window.location.href = "/external-launcher";
-  };
-
-  // AUTH LISTENER
-  useEffect(() => {
-    return onAuthStateChanged(auth, (u) => setUser(u || null));
-  }, []);
-
-  //MANUAL LOGIN  
-  const handleManualLogin = async () => {
-    try {
-      await loginWithGoogle();
-    } catch (err) {
-      console.log("Login failed:", err);
-    }
-  }
 
   //CHECK IF USER ELIGIBLE TO DOWNLOAD THE APP  
   useEffect(() => {
@@ -225,8 +208,6 @@ export default function HomeMap() {
         lat: offer.location.latitude,
         lng: offer.location.longitude,
       },
-      //map: null,
-      //icon,
       icon: offer.markerIcon,
       map: mapRef.current,
     });
@@ -363,7 +344,6 @@ export default function HomeMap() {
   // Re-center map
   const handleRecenter = () => {
     if (!mapRef.current) return;
-    setSavedMode(false);
 
     // If location already known, center immediately
     if (userLocation) {
@@ -446,24 +426,14 @@ export default function HomeMap() {
   return (
     <div className="page-container">
 
-      {forceExternalBrowser && (
-        <div className="fb-overlay">
-          <div className="fb-modal">
-            <h2>للمواصلة يجب فتح الموقع في متصفح خارجي</h2>
-
-            <button className="fb-modal-btn" onClick={handleOpenExternal}>
-            افتح في المتصفح (Chrome / Safari)
-            </button>
-
-          </div>
-        </div>
-      )}
-
       <div className="welcome-bar">
         {user ? (
-          <p className="welcome-bar-text">مرحباً، {user.displayName} 👋</p>
+          <p className="welcome-bar-text">مرحباً، {user.name} 👋</p>
         ) : (
-          <p className="welcome-bar-text login" onClick={handleManualLogin}>
+          <p 
+            className="welcome-bar-text login" 
+            onClick={() => router.push("/login")}
+          >
            تسجيل الدخول
           </p>
         )}
@@ -534,15 +504,12 @@ export default function HomeMap() {
         offer={selectedOffer}
         isOpen={isSheetOpen}
         onClose={() => setIsSheetOpen(false)}
+        user={user}
       />
 
       <div className="map-controls">
         <motion.button className="map-control-btn" whileTap={{ scale: 0.95 }} onClick={handleRecenter}>
           <FaLocationArrow />
-        </motion.button>
-
-        <motion.button className="map-control-btn refresh" onClick={handleRefresh}>
-          <HiRefresh/>
         </motion.button>
 
         {user && (
@@ -553,6 +520,11 @@ export default function HomeMap() {
             <FaBookmark />
           </motion.button>
         )}
+
+        <motion.button className="map-control-btn refresh" onClick={handleRefresh}>
+          <HiRefresh/>
+        </motion.button>
+        
       </div>
     </div>
   );

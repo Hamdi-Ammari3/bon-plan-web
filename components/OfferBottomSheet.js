@@ -1,70 +1,95 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useState } from "react";
-import { auth } from "@/firebaseConfig";
-import {loginWithGoogle,saveLikedPost,removeLikedPost,isPostLiked} from "../firebaseAuth";
+import { useRouter } from "next/navigation";
 import { IoCall } from "react-icons/io5";
 import { FaLocationArrow } from "react-icons/fa";
 import { IoClose } from "react-icons/io5";
-import { FaHeart } from "react-icons/fa";
-import { FiHeart } from "react-icons/fi";
+import { FaBookmark } from "react-icons/fa";
+import { FaRegBookmark } from "react-icons/fa6";
+import { DB } from "@/firebaseConfig";
+import { getDoc, doc } from "firebase/firestore";
+import axios from "axios";
 
-export const OfferBottomSheet = ({ offer, isOpen, onClose }) => {
-  const [isLiked, setIsLiked] = useState(false);
-  const [showHeartAnimation, setShowHeartAnimation] = useState(false);
+export const OfferBottomSheet = ({ offer, isOpen, onClose, user }) => {
+  const router = useRouter();
 
-  // -------------------------------
-  // Load liked state when sheet opens
-  // -------------------------------
+  const [isSaved, setIsSaved] = useState(false);
+  const [animateBookmark, setAnimateBookmark] = useState(false);
+  const [isPostLoading, setIsPostLoading] = useState(false);
+
+  // ---------------------------------------------------
+  // LOAD SAVED STATE (MATCHES MOBILE APP LOGIC EXACTLY)
+  // ---------------------------------------------------
   useEffect(() => {
-    async function loadLikeStatus() {
+    async function loadData() {
       if (!offer) return;
 
-      const user = auth.currentUser;
+      setIsPostLoading(true);
+
+      // If user not logged in → mark unsaved
       if (!user) {
-        setIsLiked(false);
+        setIsSaved(false);
+        setIsPostLoading(false);
         return;
       }
 
-      const liked = await isPostLiked(user.email, offer.id);
-      setIsLiked(liked);
+      try {
+        const userRef = doc(DB, "users", user.email.toLowerCase());
+        const userSnap = await getDoc(userRef);
+
+        if (userSnap.exists()) {
+          const liked = userSnap.data().liked_posts || [];
+          setIsSaved(liked.includes(offer.id));
+        } else {
+          setIsSaved(false);
+        }
+      } catch (err) {
+        console.log("Error loading saved state:", err);
+        setIsSaved(false);
+      }
+
+      setIsPostLoading(false);
     }
 
-    loadLikeStatus();
-  }, [offer]);
+    loadData();
+  }, [offer, user]);
 
-  // -------------------------------
-  // LIKE / UNLIKE POST
-  // -------------------------------
-  const handleLike = async () => {
-    let user = auth.currentUser;
+  // ---------------------------------------------------
+  // SAVE / UNSAVE POST
+  // ---------------------------------------------------
+  const handleSave = async () => {
+    if (!user) return router.push("/login");
 
-    if (!user) {
-      await loginWithGoogle();
-      user = auth.currentUser;
-    }
+    try {
+      const res = await axios.post(
+        "https://us-central1-waffer-741af.cloudfunctions.net/api/toggleLike",
+        {
+          email: user.email,
+          postId: offer.id,
+        }
+      );
 
-    const userEmail = user.email;
+      const liked = res.data.liked === true;
+      setIsSaved(liked);
 
-    if (!isLiked) {
-      await saveLikedPost(userEmail, offer.id);
-      setIsLiked(true);
-
-      // Show animation
-      setShowHeartAnimation(true);
-      setTimeout(() => setShowHeartAnimation(false), 600);
-    } else {
-      await removeLikedPost(userEmail, offer.id);
-      setIsLiked(false);
+      // Animate icon
+      setAnimateBookmark(true);
+      setTimeout(() => setAnimateBookmark(false), 350);
+    } catch (err) {
+      console.log("SAVE ERROR:", err);
     }
   };
 
-  // -------------------------------
-  // Call / Directions
-  // -------------------------------
+  // ---------------------------------------------------
+  // CALL SHOP
+  // ---------------------------------------------------
   const handleCall = () => {
     if (offer?.phone) window.location.href = `tel:${offer.phone}`;
   };
 
+  // ---------------------------------------------------
+  // GOOGLE MAPS DIRECTIONS
+  // ---------------------------------------------------
   const handleDirections = () => {
     if (!offer?.location) return;
 
@@ -75,124 +100,144 @@ export const OfferBottomSheet = ({ offer, isOpen, onClose }) => {
     );
   };
 
-  // --------------------------------------------------
+  // ---------------------------------------------------
   // RENDER
-  // --------------------------------------------------
+  // ---------------------------------------------------
   return (
     <AnimatePresence>
       {isOpen && offer && (
         <>
+          {/* BACKDROP */}
           <motion.div
+            className="sheet-backdrop"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="sheet-backdrop"
           />
 
+          {/* BOTTOM SHEET */}
           <motion.div
+            className="sheet"
             initial={{ y: "100%" }}
             animate={{ y: 0 }}
             exit={{ y: "100%" }}
             transition={{ type: "spring", damping: 30, stiffness: 300 }}
-            className="sheet"
           >
-            <div className="sheet-handle"><div/></div>
+            <div className="sheet-handle"><div /></div>
 
             <div className="sheet-content">
+
+              {/* FULL PAGE LOADING LIKE THE APP */}
+              {isPostLoading && (
+                <div className="sheet-full-loader">
+                  <div className="spinner-big"></div>
+                  <p>جاري تحميل تفاصيل العرض...</p>
+                </div>
+              )}
+
+              {/* CLOSE BUTTON */}
               <button className="sheet-close-btn" onClick={onClose}>
                 <IoClose size={20} />
               </button>
 
-              {/* Shop Info */}
-              <h2 className="sheet-title">{offer.shop_name}</h2>
-              <div className="sheet-subinfo">
-                <span>{offer.category}</span>
-                <span>•</span>
-                <span>{offer.address}</span>
-              </div>
+              {/* ONLY SHOW CONTENT AFTER LOADING */}
+              {!isPostLoading && (
+                <>
+                  {/* TITLE */}
+                  <h2 className="sheet-title">{offer.shop_name}</h2>
 
-              {/* ACTION BUTTONS */}
-              <div className="sheet-actions">
-                <button className="sheet-btn call" onClick={handleCall}>
-                  <IoCall size={18} /> اتصل
-                </button>
+                  <div className="sheet-subinfo">
+                    <span>{offer.category}</span>
+                    <span>•</span>
+                    <span>{offer.address}</span>
+                  </div>
 
-                <motion.button
-                  whileTap={{ scale: 0.9 }}
-                  className="sheet-btn like"
-                  onClick={handleLike}
-                >
-                  {isLiked ? (
-                    <FaHeart size={22} className="heart-filled"/>
+                  {/* ACTION BUTTONS */}
+                  <div className="sheet-actions">
+
+                    {/* CALL */}
+                    <button className="sheet-btn save" onClick={handleCall}>
+                      <IoCall size={22} />
+                    </button>
+
+                    {/* SAVE / UNSAVE */}
+                    <motion.button
+                      whileTap={{ scale: 0.85 }}
+                      className={`sheet-btn save ${isSaved ? "saved" : ""}`}
+                      onClick={handleSave}
+                    >
+                      {isSaved ? (
+                        <FaBookmark size={24} />
+                      ) : (
+                        <FaRegBookmark size={24} />
+                      )}
+
+                      {/* POP ANIMATION */}
+                      {animateBookmark && (
+                        <motion.div
+                          className="sheet-like-animation"
+                          initial={{ scale: 0.3, opacity: 1 }}
+                          animate={{ scale: 1.8, opacity: 0 }}
+                          transition={{ duration: 0.4 }}
+                        >
+                          <FaBookmark size={26} />
+                        </motion.div>
+                      )}
+                    </motion.button>
+
+                    {/* DIRECTIONS */}
+                    <button className="sheet-btn direction" onClick={handleDirections}>
+                      <FaLocationArrow size={22} />
+                    </button>
+                  </div>
+
+                  {/* PRODUCT NAME */}
+                  <h3 className="sheet-prod-name">{offer.prod_name}</h3>
+
+                  {/* PRICE OR DISCOUNT */}
+                  {offer.discount_type === "price" ? (
+                    <div className="sheet-price-box">
+                      <span className="sheet-price-old">{offer.old_price} د.ت</span>
+                      <span>/</span>
+                      <span className="sheet-price-new">{offer.new_price} د.ت</span>
+                    </div>
                   ) : (
-                    <FiHeart size={22}/>
-                  )}  
+                    <div className="sheet-discount-box">
+                      <span className="sheet-discount">{offer.percentage}%</span>
+                      <span className="sheet-discount-label">تخفيض</span>
+                    </div>
+                  )}
 
-                  <AnimatePresence>
-                    {showHeartAnimation && (
-                      <motion.div
-                        initial={{ scale: 0, opacity: 1 }}
-                        animate={{ scale: 2, opacity: 0 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 0.6 }}
-                        className="sheet-like-animation"
-                      >
-                        <FiHeart size={26} />
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </motion.button>
-
-                <button className="sheet-btn direction" onClick={handleDirections}>
-                  <FaLocationArrow size={18}/> اتجاهات
-                </button>
-              </div>
-
-              {/* PRODUCT INFO */}
-              <h3 className="sheet-prod-name">{offer.prod_name}</h3>
-
-              {offer.discount_type === "price" ? (
-                <div className="sheet-price-box">
-                  <span className="sheet-price-old">{offer.old_price} د.ت</span>
-                  <span>/</span>
-                  <span className="sheet-price-new">{offer.new_price} د.ت</span>
-                </div>
-              ) : (
-                <div className="sheet-discount-box">
-                  <span className="sheet-discount">{offer.percentage}%</span>
-                  <span className="sheet-discount-label">تخفيض</span>
-                </div>
-              )}
-
-              <p className="sheet-expire-text">
-                عرض صالح إلى غاية:{" "}
-                {offer.end_date
-                  ? new Intl.DateTimeFormat("ar-TN", {
+                  {/* EXPIRATION */}
+                  <p className="sheet-expire-text">
+                    عرض صالح إلى غاية:{" "}
+                    {new Intl.DateTimeFormat("ar-TN", {
                       weekday: "long",
                       day: "numeric",
                       month: "long",
-                      year: "numeric"
-                    }).format(offer.end_date.toDate())
-                  : "—"}
-              </p>
+                      year: "numeric",
+                    }).format(offer.end_date.toDate())}
+                  </p>
 
-              {/* IMAGES */}
-              {offer.images?.length > 0 && (
-                <div className="sheet-images-container">
-                  <div className="sheet-images">
-                    {offer.images.map((img, idx) => (
-                      <motion.img
-                        key={idx}
-                        src={img}
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ delay: idx * 0.1 }}
-                        className="sheet-image"
-                      />
-                    ))}
-                  </div>
-                </div>
+                  {/* IMAGES */}
+                  {offer.images?.length > 0 && (
+                    <div className="sheet-images-container">
+                      <div className="sheet-images">
+                        {offer.images.map((img, idx) => (
+                          <motion.img
+                            key={idx}
+                            src={img}
+                            className="sheet-image"
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ delay: idx * 0.1 }}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </motion.div>

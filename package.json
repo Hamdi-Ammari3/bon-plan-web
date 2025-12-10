@@ -11,6 +11,7 @@
   "dependencies": {
     "@googlemaps/markerclusterer": "^2.6.2",
     "@react-google-maps/api": "^2.20.7",
+    "axios": "^1.13.2",
     "dotenv": "^17.2.3",
     "firebase": "^12.6.0",
     "framer-motion": "^12.23.24",
