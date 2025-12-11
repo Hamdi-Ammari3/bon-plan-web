@@ -259,7 +259,6 @@ html, body {
 }
 
 .welcome-bar-text.login {
-  text-decoration: underline;
   cursor: pointer;
 }
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef, useMemo } from "react";
-import { GoogleMap, LoadScript } from "@react-google-maps/api";
+import { GoogleMap, LoadScriptNext } from "@react-google-maps/api";
 import { MarkerClusterer, SuperClusterAlgorithm } from "@googlemaps/markerclusterer";
 import { motion } from "framer-motion";
 import { CategoryFilter } from "../components/CategoryFilter";
@@ -434,7 +434,7 @@ export default function HomeMap() {
             className="welcome-bar-text login" 
             onClick={() => router.push("/login")}
           >
-           تسجيل الدخول
+           أنشئ حساب و تحصل على عروض أكثر
           </p>
         )}
       </div>
@@ -483,7 +483,7 @@ export default function HomeMap() {
         </div>
       )}
 
-      <LoadScript googleMapsApiKey={googleMapsKey}>
+      <LoadScriptNext googleMapsApiKey={googleMapsKey}>
         <GoogleMap
           mapContainerClassName="map-fullscreen"
           center={tunisiaCenter}
@@ -492,7 +492,7 @@ export default function HomeMap() {
           onLoad={onMapLoad}
         >
         </GoogleMap>
-      </LoadScript>
+      </LoadScriptNext>
 
       <CategoryFilter
         categories={categories}

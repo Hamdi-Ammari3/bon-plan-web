@@ -17,9 +17,7 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="ar" dir="rtl">
-      <body
-        className={`${notoArabic.variable}`}
-      >
+      <body className={`${notoArabic.variable}`}>
         {children}
       </body>
     </html>
