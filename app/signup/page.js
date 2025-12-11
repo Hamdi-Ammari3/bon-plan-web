@@ -24,8 +24,13 @@ export default function Signup() {
       return;
     }
 
-    if(name.length > 10) {
-      alert("يجب أن لا يتجاوز الإسم 10 أحرف.");
+    if(name.length < 3) {
+      alert("يجب ان يحتوي الاسم على 3 احرف على الاقل");
+      return;
+    }
+
+    if(name.length > 15) {
+      alert("يجب أن لا يتجاوز الإسم 15 حرفا.");
       return;
     }
 
