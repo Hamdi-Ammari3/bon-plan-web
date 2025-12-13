@@ -41,6 +41,7 @@ export default function HomeMap() {
   const [canTestApp, setCanTestApp] = useState(false);
   const [showDownloadBanner, setShowDownloadBanner] = useState(true);
   const [isDownloadModalOpen, setIsDownloadModalOpen] = useState(false);
+  const [openInExternalBrowser, setOpenInExternalBrowser] = useState(true);
 
   const mapRef = useRef(null);
   const clustererRef = useRef(null);
@@ -423,6 +424,12 @@ export default function HomeMap() {
     }
   }, [mapLoadedOnce, offers]);
 
+  //Copy link to open it in external browser
+  const copyLinkhandler = () => {
+    navigator.clipboard.writeText(window.location.href);
+    alert('تم نسخ رابط الموقع')
+  }
+
   return (
     <div className="page-container">
 
@@ -438,6 +445,13 @@ export default function HomeMap() {
           </p>
         )}
       </div>
+
+      {openInExternalBrowser && (
+        <div className="external-browser-bar">
+          <p onClick={copyLinkhandler}className="external-browser-text">⚠️ للحصول على أفضل تجربة، افتح الموقع عبر Google Chrome</p>
+          <div className="close-banner-btn" onClick={() => setOpenInExternalBrowser(false)}>×</div>
+        </div>
+      )}
 
       {user && canTestApp && showDownloadBanner && (
         <div className="download-banner">
